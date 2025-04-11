@@ -356,7 +356,7 @@ const CategoriesPage = () => {
             />
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row  sm:items-center gap-2">
             <div className="flex border-2 border-black rounded-md overflow-hidden shadow-[2px_2px_0_0_#163300]">
               <button
                 onClick={() => setViewMode('grid')}

@@ -96,7 +96,7 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
           <div className="flex items-center gap-2">
             <Button 
               onClick={checkAnswer}
-              className="text-sm bg-[#163300] hover:bg-[#0e2200]"
+              className="text-xs bg-[#163300] hover:bg-[#0e2200]"
               disabled={!userAnswer.trim()}
             >
               Check Answer
@@ -104,7 +104,7 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
             
             <Button 
               variant="outline"
-              className="text-sm border-black hover:bg-[#FFC107] hover:text-black"
+              className="text-xs border-black hover:bg-[#FFC107] hover:text-black"
               onClick={() => setIsAnswerVisible(true)}
             >
               Give Up & Reveal

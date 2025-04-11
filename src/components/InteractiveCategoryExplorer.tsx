@@ -288,7 +288,7 @@ const InteractiveCategoryExplorer = () => {
             <Award size={14} className="mr-1" /> Popular Categories
           </span>
           <Link 
-            href="riddles/categories" 
+            href="/riddles/categories" 
             className="text-xs text-purple-600 hover:underline flex items-center"
           >
             View All <Sparkles size={12} className="ml-1" />
