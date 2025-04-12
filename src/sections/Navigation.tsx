@@ -4,6 +4,7 @@ import { menuItems } from '@/data/constantValue';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react';
+import { signIn } from 'next-auth/react';
 
 // If you don't have menuItems defined, here's an example structure
 
@@ -80,11 +81,12 @@ const Navigation = () => {
               )))}
             </ul>
               <Button className='shadow-[2px_2px_0_0_#163300]'
+              
                 >
               <div className="hamburger-container relative">
       {/* Button container */}
       <div className="flex items-center gap-2">
-      <span>LOGIN</span>
+      <span onClick={() => signIn("google")}>LOGIN</span>
       <div 
         onClick={toggleMenu}
         className="flex items-center justify-center rounded-md  focus:outline-none sm:hidden"
