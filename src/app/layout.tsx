@@ -15,7 +15,9 @@ export const metadata: Metadata = {
   description: "Get challenging questions and answers with our AI-powered riddle generator",
   verification: {
     google: 'xXjJtQZBYvHXYRqToKKo30qSzTNchNmzZfILm5g11Qo',
+    ezoic: 'S1vMmTyjXdKR7x1AZZQtQEdXlrzTxn'
   },
+  
 };
 
 
