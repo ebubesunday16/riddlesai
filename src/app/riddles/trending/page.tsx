@@ -78,7 +78,7 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
         </Button>
         
         <Link 
-          href={`/${slugify(riddle.category)}`}
+          href={`/riddles/${slugify(riddle.category)}`}
           className="text-xs text-gray-600 hover:underline"
         >
           {riddle.category}

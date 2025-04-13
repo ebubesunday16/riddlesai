@@ -210,7 +210,7 @@ const InteractiveCategoryExplorer = () => {
               size="sm"
               className="shadow-[2px_2px_0_0_#163300] border-2 border-black text-xs bg-[#FFC107] hover:bg-[#333333] hover:text-white"
             >
-              <Link href={`/${slugify(activeCategory)}`}>
+              <Link href={`/riddles/${slugify(activeCategory)}`}>
                 View All {stats[activeCategory]?.count || 0} Riddles
               </Link>
             </Button>
@@ -299,7 +299,7 @@ const InteractiveCategoryExplorer = () => {
           {categories.map(category => (
             <Link
               key={category}
-              href={`/${slugify(category)}`}
+              href={`/riddles/${slugify(category)}`}
               className="px-2 py-1 bg-[#FFC107] hover:bg-[#E5AC06] border border-black rounded text-xs shadow-[1px_1px_0_0_#163300] transition-colors"
             >
               {toTitleCase(category)}

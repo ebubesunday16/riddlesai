@@ -514,7 +514,7 @@ const CategoriesPage = () => {
                   className="w-full mt-3 shadow-[2px_2px_0_0_#163300] border-2 border-black text-sm text-black
                     bg-white hover:bg-[#FFC107] hover:text-white"
                 >
-                  <Link href={`/${slugify(category)}`}>
+                  <Link href={`/riddles/${slugify(category)}`}>
                     View All Riddles
                   </Link>
                 </Button>
@@ -581,7 +581,7 @@ const CategoriesPage = () => {
                         className="shadow-[1px_1px_0_0_#163300] border border-black text-xs text-black
                           bg-white hover:bg-[#FFC107] hover:text-white"
                       >
-                        <Link href={`/${slugify(category)}`}>
+                        <Link href={`/riddles/${slugify(category)}`}>
                           View
                         </Link>
                       </Button>
@@ -615,7 +615,7 @@ const CategoriesPage = () => {
               asChild
               className="shadow-[2px_2px_0_0_#163300] border-2 border-black text-sm bg-[#FFC107] hover:bg-[#333333] hover:text-white"
             >
-              <Link href={`/${slugify(activeCategory)}`}>
+              <Link href={`/riddles/${slugify(activeCategory)}`}>
                 View All {stats[activeCategory]?.count || 0} Riddles
               </Link>
             </Button>
@@ -758,7 +758,7 @@ const CategoriesPage = () => {
                   .map(relatedCat => (
                     <Link
                       key={relatedCat}
-                      href={`/${slugify(relatedCat)}`}
+                      href={`/riddles/${slugify(relatedCat)}`}
                       className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs transition-colors"
                     >
                       {toTitleCase(relatedCat)}
@@ -817,7 +817,7 @@ const CategoriesPage = () => {
                   .map(cat => (
                     <div key={cat} className="text-sm flex justify-between items-center">
                       <Link 
-                        href={`/${slugify(cat)}`}
+                        href={`/riddles/${slugify(cat)}`}
                         className="hover:text-purple-600 hover:underline"
                       >
                         {toTitleCase(cat)}
@@ -894,7 +894,7 @@ const CategoriesPage = () => {
                   className="w-full shadow-[2px_2px_0_0_#163300] border-2 border-black text-sm 
                     bg-[#FFC107] hover:bg-[#E5AC06]"
                 >
-                  <Link href={`/${slugify(category)}`}>
+                  <Link href={`/riddles/${slugify(category)}`}>
                     Explore {toTitleCase(category)} Riddles
                   </Link>
                 </Button>
