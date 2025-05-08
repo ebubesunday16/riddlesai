@@ -157,7 +157,7 @@ const InteractiveCategoryExplorer = () => {
     
     return (
       <div className="border-2 border-black rounded-md p-4 bg-white mb-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex  justify-between gap-2 mb-3 flex-col sm:flex-row sm:items-center">
           <h3 className="font-bold flex items-center">
             <Puzzle size={16} className="mr-2 text-purple-600" />
             {toTitleCase(activeCategory)} Preview
