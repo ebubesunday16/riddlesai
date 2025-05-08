@@ -202,69 +202,7 @@ const CategoriesPage = () => {
     }
   };
   
-  const handleCategoryClick = (category: string) => {
-    // Reset answer visibility when changing categories
-    setShowAnswer(false);
-    
-    if (activeCategory === category) {
-      setActiveCategory(null);
-      setRandomRiddle(null);
-      return;
-    }
-    
-    setActiveCategory(category);
-    setIsLoading(true);
-    
-    // Find riddles in this category
-    const riddlesInCategory = RiddleArray.filter(riddle => 
-      riddle.keyword.replace(/-/g, ' ') === category
-    );
-    
-    // Select a random riddle
-    if (riddlesInCategory.length > 0) {
-      const randomIndex = Math.floor(Math.random() * riddlesInCategory.length);
-      // Short timeout to show loading state
-      setTimeout(() => {
-        setRandomRiddle(riddlesInCategory[randomIndex]);
-        setIsLoading(false);
-      }, 300);
-    } else {
-      setRandomRiddle(null);
-      setIsLoading(false);
-    }
-  };
 
-  const getAnotherRiddle = () => {
-    if (!activeCategory) return;
-    
-    setIsLoading(true);
-    setShowAnswer(false);
-    
-    const riddlesInCategory = RiddleArray.filter(
-      riddle => riddle.keyword.replace(/-/g, ' ') === activeCategory
-    );
-    
-    if (riddlesInCategory.length > 0) {
-      let newRiddle;
-      
-      // Try to get a different riddle than the current one
-      if (riddlesInCategory.length > 1 && randomRiddle) {
-        const filteredRiddles = riddlesInCategory.filter(r => r.id !== randomRiddle.id);
-        const randomIndex = Math.floor(Math.random() * filteredRiddles.length);
-        newRiddle = filteredRiddles[randomIndex];
-      } else {
-        const randomIndex = Math.floor(Math.random() * riddlesInCategory.length);
-        newRiddle = riddlesInCategory[randomIndex];
-      }
-      
-      setTimeout(() => {
-        setRandomRiddle(newRiddle);
-        setIsLoading(false);
-      }, 300);
-    } else {
-      setIsLoading(false);
-    }
-  };
   
   const resetFilters = () => {
     setSearchQuery('');
@@ -470,12 +408,8 @@ const CategoriesPage = () => {
             {categories.map((category) => (
               <div
                 key={category}
-                onClick={() => handleCategoryClick(category)}
-                className={`p-4 border-2 border-black rounded-lg cursor-pointer hover:bg-[#FEFAE8] transition duration-150 ${
-                  activeCategory === category 
-                    ? 'bg-[#FFC107] shadow-[2px_2px_0_0_#163300]' 
-                    : 'bg-white shadow-[1px_1px_0_0_#163300]'
-                }`}
+                
+                className={`p-4 border-2 border-black rounded-lg cursor-pointer hover:bg-[#FEFAE8] bg-white  `}
               >
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="font-bold text-lg">{toTitleCase(category)}</h3>
@@ -511,8 +445,8 @@ const CategoriesPage = () => {
                 
                 <Button
                   asChild
-                  className="w-full mt-3 shadow-[2px_2px_0_0_#163300] border-2 border-black text-sm text-black
-                    bg-white hover:bg-[#FFC107] hover:text-white"
+                  className="w-full mt-3 shadow-[2px_2px_0_0_#163300] border-2 border-black text-sm text-black bg-white
+                    "
                 >
                   <Link href={`/riddles/${slugify(category)}`}>
                     View All Riddles
@@ -538,7 +472,7 @@ const CategoriesPage = () => {
                   <tr key={category} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-4 py-3 font-medium text-[#1C3144]">
                       <span className="cursor-pointer hover:text-purple-600" 
-                        onClick={() => handleCategoryClick(category)}>
+                        >
                         {toTitleCase(category)}
                       </span>
                     </td>
@@ -603,182 +537,7 @@ const CategoriesPage = () => {
         </div>
       )}
       
-      {/* Category preview panel */}
-      {activeCategory && (
-        <div className="border-2 border-black rounded-lg p-4 bg-white mb-8 shadow-[4px_4px_0_0_#163300]">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-lg flex items-center">
-              <Puzzle size={20} className="mr-2 text-purple-600" />
-              {toTitleCase(activeCategory)} Preview
-            </h3>
-            <Button
-              asChild
-              className="shadow-[2px_2px_0_0_#163300] border-2 border-black text-sm bg-[#FFC107] hover:bg-[#333333] hover:text-white"
-            >
-              <Link href={`/riddles/${slugify(activeCategory)}`}>
-                View All {stats[activeCategory]?.count || 0} Riddles
-              </Link>
-            </Button>
-          </div>
-          
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="w-full md:w-1/2">
-              {isLoading ? (
-                <div className="h-32 flex items-center justify-center">
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
-              ) : randomRiddle ? (
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                    <h4 className="font-medium mb-2 text-gray-700">Riddle</h4>
-                    <div className="font-medium">{randomRiddle.riddle}</div>
-                  </div>
-                  <div 
-                    className="relative overflow-hidden cursor-pointer border border-gray-200 rounded-md"
-                    onClick={() => setShowAnswer(prev => !prev)}
-                  >
-                    <div className={`bg-gray-50 p-4 ${showAnswer ? '' : 'blur-md'}`}>
-                      <h4 className="font-medium mb-2 text-gray-700">Answer</h4>
-                      <div className="italic">
-                        {randomRiddle.answer}
-                      </div>
-                    </div>
-                    {!showAnswer && (
-                      <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-600 pointer-events-none">
-                        <span className="bg-white px-3 py-2 rounded shadow-sm">Tap to reveal answer</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-32 flex items-center justify-center text-sm text-gray-500">
-                  No riddles available in this category
-                </div>
-              )}
-              
-              <div className="mt-4 flex items-center justify-between">
-                <div className="flex gap-2">
-                <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-xs border border-gray-300 hover:bg-gray-50"
-                    onClick={() => {
-                      setActiveCategory(null);
-                      setRandomRiddle(null);
-                    }}
-                  >
-                    Close
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-xs border border-gray-300 hover:bg-gray-50"
-                    onClick={getAnotherRiddle}
-                    disabled={!activeCategory || stats[activeCategory]?.count <= 1}
-                  >
-                    Another Riddle
-                  </Button>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50"
-                  aria-label="Save this riddle"
-                >
-                  <Bookmark size={14} className="mr-1" /> Save
-                </Button>
-              </div>
-            </div>
-            
-            <div className="w-full md:w-1/2 border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-4">
-              <h4 className="font-medium mb-3 flex items-center">
-                <Brain size={16} className="text-purple-600 mr-2" />
-                Category Information
-              </h4>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Riddles:</span>
-                  <span className="font-semibold">{stats[activeCategory]?.count || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Average Difficulty:</span>
-                  <span className={`px-2 py-0.5 rounded text-xs ${
-                    getDifficultyColor(stats[activeCategory]?.avgDifficulty || 3)
-                  }`}>
-                    Level {stats[activeCategory]?.avgDifficulty || 3}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Status:</span>
-                  <div className="flex gap-1">
-                    {stats[activeCategory]?.trending && (
-                      <span className="text-xs bg-purple-100 text-purple-800 px-1 rounded flex items-center">
-                        <TrendingUp size={10} className="mr-0.5" /> Trending
-                      </span>
-                    )}
-                    {stats[activeCategory]?.recentlyAdded && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded flex items-center">
-                        <Clock size={10} className="mr-0.5" /> New
-                      </span>
-                    )}
-                    {stats[activeCategory]?.featured && (
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-1 rounded flex items-center">
-                        <Star size={10} className="mr-0.5" /> Featured
-                      </span>
-                    )}
-                    {!stats[activeCategory]?.trending && !stats[activeCategory]?.recentlyAdded && !stats[activeCategory]?.featured && (
-                      <span className="text-xs bg-gray-100 text-gray-800 px-1 rounded">
-                        Standard
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Related categories - simulate some related categories based on first letter */}
-              <h4 className="font-medium mb-2 flex items-center">
-                <Puzzle size={16} className="text-purple-600 mr-2" />
-                Related Categories
-              </h4>
-              
-              <div className="flex flex-wrap gap-2">
-                {categories
-                  .filter(cat => 
-                    cat !== activeCategory && 
-                    (cat[0] === activeCategory[0] || 
-                     cat.includes(activeCategory.split(' ')[0]) ||
-                     activeCategory.includes(cat.split(' ')[0]))
-                  )
-                  .slice(0, 5)
-                  .map(relatedCat => (
-                    <Link
-                      key={relatedCat}
-                      href={`/riddles/${slugify(relatedCat)}`}
-                      className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs transition-colors"
-                    >
-                      {toTitleCase(relatedCat)}
-                    </Link>
-                  ))}
-                
-                {categories
-                  .filter(cat => 
-                    cat !== activeCategory && 
-                    (cat[0] === activeCategory[0] || 
-                     cat.includes(activeCategory.split(' ')[0]) ||
-                     activeCategory.includes(cat.split(' ')[0]))
-                  ).length === 0 && (
-                    <span className="text-xs text-gray-500">No related categories found</span>
-                  )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
       
       {/* Category Groups - grouping categories by difficulty level */}
       <div className="mb-8">

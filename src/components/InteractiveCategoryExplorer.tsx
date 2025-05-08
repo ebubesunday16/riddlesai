@@ -150,6 +150,176 @@ const InteractiveCategoryExplorer = () => {
       setIsLoading(false);
     }
   };
+
+  // Function to render the category preview section
+  const renderCategoryPreview = () => {
+    if (!activeCategory) return null;
+    
+    return (
+      <div className="border-2 border-black rounded-md p-4 bg-white mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold flex items-center">
+            <Puzzle size={16} className="mr-2 text-purple-600" />
+            {toTitleCase(activeCategory)} Preview
+          </h3>
+          <Button
+            asChild
+            size="sm"
+            className="shadow-[2px_2px_0_0_#163300] border-2 border-black text-xs bg-[#FFC107] hover:bg-[#333333] hover:text-white"
+          >
+            <Link href={`/riddles/${slugify(activeCategory)}`}>
+              View All {stats[activeCategory]?.count || 0} Riddles
+            </Link>
+          </Button>
+        </div>
+        
+        {isLoading ? (
+          <div className="h-20 flex items-center justify-center">
+            <div className="flex space-x-2">
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        ) : randomRiddle ? (
+          <div className="space-y-3">
+            <div className="font-medium text-sm">{randomRiddle.riddle}</div>
+            <div 
+              className="relative overflow-hidden cursor-pointer"
+              onClick={() => setShowAnswer(prev => !prev)}
+            >
+              <div className={`text-xs italic bg-gray-50 p-2 rounded ${showAnswer ? '' : 'blur-md'}`}>
+                {randomRiddle.answer}
+              </div>
+              {!showAnswer && (
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-600 pointer-events-none">
+                  <span className="bg-white px-2 py-1 rounded shadow-sm">Tap to reveal answer</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="h-20 flex items-center justify-center text-sm text-gray-500">
+            No riddles available in this category
+          </div>
+        )}
+        
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs border border-gray-300 hover:bg-gray-50"
+              onClick={() => {
+                setActiveCategory(null);
+                setRandomRiddle(null);
+              }}
+            >
+              Close
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs border border-gray-300 hover:bg-gray-50"
+              onClick={getAnotherRiddle}
+              disabled={!activeCategory || stats[activeCategory]?.count <= 1}
+            >
+              Another Riddle
+            </Button>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+            aria-label="Save this riddle"
+          >
+            <Bookmark size={14} className="mr-1" /> Save
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Regroup the categories to render them in chunks with the active category's preview rendered after it
+  const renderCategoriesWithPreview = () => {
+    let result = [];
+    const firstHalf = [];
+    const secondHalf = [];
+    let activeIndex = -1;
+    
+    // Find the active category index
+    if (activeCategory) {
+      activeIndex = categories.findIndex(category => category === activeCategory);
+    }
+    
+    // Create the category grid
+    categories.forEach((category, index) => {
+      const categoryElement = (
+        <div
+          key={category}
+          onClick={() => handleCategoryClick(category)}
+          className={`p-3 border-2 border-black rounded-md cursor-pointer hover:bg-[#FEFAE8] transition duration-150 ${
+            activeCategory === category 
+              ? 'bg-[#FFC107] shadow-[2px_2px_0_0_#163300]' 
+              : 'bg-white shadow-[1px_1px_0_0_#163300]'
+          }`}
+        >
+          <div className="flex justify-between items-start mb-2">
+            <span className="font-semibold text-sm">{toTitleCase(category)}</span>
+            {stats[category]?.trending && (
+              <span className="flex items-center text-xs bg-purple-100 text-purple-800 px-1 rounded">
+                <TrendingUp size={10} className="mr-0.5" /> Hot
+              </span>
+            )}
+          </div>
+          
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-600">{stats[category]?.count || 0} riddles</span>
+            
+            <span className={`px-1.5 py-0.5 rounded text-xs flex items-center ${
+              getDifficultyColor(stats[category]?.avgDifficulty || 3)
+            }`}>
+              <Brain size={10} className="mr-1" />
+              Lvl {stats[category]?.avgDifficulty || 3}
+            </span>
+          </div>
+        </div>
+      );
+      
+      // Decide whether to put this category in the first or second half
+      if (index < Math.ceil(categories.length / 2)) {
+        firstHalf.push(categoryElement);
+      } else {
+        secondHalf.push(categoryElement);
+      }
+    });
+    
+    // Add the first half to the result
+    result.push(...firstHalf);
+    
+    // If there's an active category and it's in the first half, add the preview here
+    if (activeIndex !== -1 && activeIndex < Math.ceil(categories.length / 2)) {
+      result.push(
+        <div key="preview-first" className="col-span-2 md:col-span-3 mt-3">
+          {renderCategoryPreview()}
+        </div>
+      );
+    }
+    
+    // Add the second half to the result
+    result.push(...secondHalf);
+    
+    // If there's an active category and it's in the second half, add the preview here
+    if (activeIndex !== -1 && activeIndex >= Math.ceil(categories.length / 2)) {
+      result.push(
+        <div key="preview-second" className="col-span-2 md:col-span-3 mt-3">
+          {renderCategoryPreview()}
+        </div>
+      );
+    }
+    
+    return result;
+  };
   
   return (
     <div className="p-4 mb-16 rounded-lg border-2 border-black bg-[#FEFAE8] shadow-[4px_4px_0_0_#163300]">
@@ -165,122 +335,8 @@ const InteractiveCategoryExplorer = () => {
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-        {categories.map((category) => (
-          <div
-            key={category}
-            onClick={() => handleCategoryClick(category)}
-            className={`p-3 border-2 border-black rounded-md cursor-pointer hover:bg-[#FEFAE8] transition duration-150 ${
-              activeCategory === category 
-                ? 'bg-[#FFC107] shadow-[2px_2px_0_0_#163300]' 
-                : 'bg-white shadow-[1px_1px_0_0_#163300]'
-            }`}
-          >
-            <div className="flex justify-between items-start mb-2">
-              <span className="font-semibold text-sm">{toTitleCase(category)}</span>
-              {stats[category]?.trending && (
-                <span className="flex items-center text-xs bg-purple-100 text-purple-800 px-1 rounded">
-                  <TrendingUp size={10} className="mr-0.5" /> Hot
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">{stats[category]?.count || 0} riddles</span>
-              
-              <span className={`px-1.5 py-0.5 rounded text-xs flex items-center ${
-                getDifficultyColor(stats[category]?.avgDifficulty || 3)
-              }`}>
-                <Brain size={10} className="mr-1" />
-                Lvl {stats[category]?.avgDifficulty || 3}
-              </span>
-            </div>
-          </div>
-        ))}
+        {renderCategoriesWithPreview()}
       </div>
-      
-      {activeCategory && (
-        <div className="border-2 border-black rounded-md p-4 bg-white mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold flex items-center">
-              <Puzzle size={16} className="mr-2 text-purple-600" />
-              {toTitleCase(activeCategory)} Preview
-            </h3>
-            <Button
-              asChild
-              size="sm"
-              className="shadow-[2px_2px_0_0_#163300] border-2 border-black text-xs bg-[#FFC107] hover:bg-[#333333] hover:text-white"
-            >
-              <Link href={`/riddles/${slugify(activeCategory)}`}>
-                View All {stats[activeCategory]?.count || 0} Riddles
-              </Link>
-            </Button>
-          </div>
-          
-          {isLoading ? (
-            <div className="h-20 flex items-center justify-center">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </div>
-          ) : randomRiddle ? (
-            <div className="space-y-3">
-              <div className="font-medium text-sm">{randomRiddle.riddle}</div>
-              <div 
-                className="relative overflow-hidden cursor-pointer"
-                onClick={() => setShowAnswer(prev => !prev)}
-              >
-                <div className={`text-xs italic bg-gray-50 p-2 rounded ${showAnswer ? '' : 'blur-md'}`}>
-                  {randomRiddle.answer}
-                </div>
-                {!showAnswer && (
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-600 pointer-events-none">
-                    <span className="bg-white px-2 py-1 rounded shadow-sm">Tap to reveal answer</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="h-20 flex items-center justify-center text-sm text-gray-500">
-              No riddles available in this category
-            </div>
-          )}
-          
-          <div className="mt-4 flex items-center justify-between">
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="text-xs border border-gray-300 hover:bg-gray-50"
-                onClick={() => {
-                  setActiveCategory(null);
-                  setRandomRiddle(null);
-                }}
-              >
-                Close
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="text-xs border border-gray-300 hover:bg-gray-50"
-                onClick={getAnotherRiddle}
-                disabled={!activeCategory || stats[activeCategory]?.count <= 1}
-              >
-                Another Riddle
-              </Button>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50"
-              aria-label="Save this riddle"
-            >
-              <Bookmark size={14} className="mr-1" /> Save
-            </Button>
-          </div>
-        </div>
-      )}
       
       <div className="border-t border-dashed border-gray-300 pt-4">
         <div className="flex justify-between">
