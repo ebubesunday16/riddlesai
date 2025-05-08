@@ -1,5 +1,6 @@
 import EngagementFeatures from "@/components/EngagementFeatures";
 import RiddleGenerator from "@/components/Generator";
+import InteractiveCategoryExplorer from "@/components/InteractiveCategoryExplorer";
 import CraftTheQuestion from "@/sections/CraftTheQuestion";
 import Hero from "@/sections/Hero";
 import HowItWorks from "@/sections/HowItWorks";
@@ -12,6 +13,7 @@ export default function Home() {
       <HowItWorks />
       <CraftTheQuestion />
       <EngagementFeatures />
+      <InteractiveCategoryExplorer />
 
       
 

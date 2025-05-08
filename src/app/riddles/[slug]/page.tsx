@@ -127,6 +127,7 @@ const Page = async ({ params }: Props) => {
         </ul>
       </div>
       <EngagementFeatures />
+      <InteractiveCategoryExplorer />
     </section>
   );
 };

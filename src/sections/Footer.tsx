@@ -1,12 +1,14 @@
-import Link from "next/link"
 import CategoryUI from "@/components/CategoryUi"
-import { Brain,  } from "lucide-react"
-import InteractiveCategoryExplorer from "@/components/InteractiveCategoryExplorer"
+import { Brain, } from "lucide-react"
+import Link from "next/link"
  
 const Footer = ({className}: {className: string}) => {
   return (
     <footer className={`mt-36 mb-16 ${className} `}>
-      <InteractiveCategoryExplorer />
+      <div className="mb-16">
+
+      <CategoryUI />
+      </div>
       
       <div className="flex flex-col gap-6 justify-between items-start sm:flex-row">
         <div className="flex-1 flex flex-col space-y-4">
@@ -31,11 +33,6 @@ const Footer = ({className}: {className: string}) => {
             <li className="hover:underline">
               <Link href='/'>
                 Riddes AI
-              </Link>
-            </li>
-            <li className="hover:underline">
-              <Link href='/riddles/categories'>
-                Categories
               </Link>
             </li>
             <li className="hover:underline">

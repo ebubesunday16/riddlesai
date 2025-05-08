@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { slugify } from '@/utils/func';
 import { Award, Bookmark, Brain, Star, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { impossibleRiddles, type TrendingRiddleType } from '@/data/ImpossibleRiddle';
+import { toast } from 'sonner';
 
 // DifficultyBadge component (reused from EngagementFeatures)
 const DifficultyBadge = ({ difficulty }: { difficulty: TrendingRiddleType['difficulty'] }) => {
@@ -30,25 +31,74 @@ const DifficultyBadge = ({ difficulty }: { difficulty: TrendingRiddleType['diffi
   );
 };
 
-// RiddleCard component (reused from EngagementFeatures)
-const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBookmark?: (id: string) => void }) => {
+// RiddleCard component (enhanced with real-time like/bookmark features)
+const RiddleCard = ({ 
+  riddle, 
+  onBookmark,
+  isBookmarked,
+  onLike,
+  likeCount,
+  onSolve,
+  isSolved
+}: { 
+  riddle: TrendingRiddleType, 
+  onBookmark: (id: string) => void,
+  isBookmarked: boolean,
+  onLike: (id: string) => void,
+  likeCount: number,
+  onSolve: (id: string) => void,
+  isSolved: boolean
+}) => {
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [hasAttempted, setHasAttempted] = useState(false);
   const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
+  // Show already solved state
+  useEffect(() => {
+    if (isSolved) {
+      setIsCorrect(true);
+      setHasAttempted(true);
+    }
+  }, [isSolved]);
+
   const toggleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    if (onBookmark) onBookmark(riddle.id);
+    onBookmark(riddle.id);
+    toast(isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks', {
+      description: isBookmarked ? 
+        `"${riddle.question.substring(0, 30)}..." removed from your bookmarks` : 
+        `"${riddle.question.substring(0, 30)}..." added to your bookmarks`,
+      icon: isBookmarked ? '🔖' : '📌',
+      position: 'bottom-right',
+    });
+  };
+
+  const handleLike = () => {
+    onLike(riddle.id);
+    toast('Thanks for your feedback!', {
+      description: `You ${likeCount > riddle.likes ? 'liked' : 'unliked'} this riddle`,
+      icon: likeCount > riddle.likes ? '👍' : '👎',
+      position: 'bottom-right',
+    });
   };
 
   const checkAnswer = () => {
     const normalizedUserAnswer = userAnswer.trim().toLowerCase();
     const normalizedCorrectAnswer = riddle.answer.trim().toLowerCase();
     
-    setIsCorrect(normalizedUserAnswer === normalizedCorrectAnswer);
+    const correct = normalizedUserAnswer === normalizedCorrectAnswer;
+    setIsCorrect(correct);
     setHasAttempted(true);
+    
+    if (correct && !isSolved) {
+      onSolve(riddle.id);
+      toast('Congratulations!', {
+        description: 'You solved an impossible riddle!',
+        icon: '🏆',
+        position: 'bottom-right',
+        duration: 5000,
+      });
+    }
   };
 
   return (
@@ -61,14 +111,25 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
               New
             </span>
           )}
+          {isSolved && (
+            <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full border border-green-200 flex items-center gap-1">
+              <Award size={12} /> Solved
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <ThumbsUp size={12} /> {riddle.likes}
-          </span>
+          <button 
+            onClick={handleLike}
+            className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+            aria-label={likeCount > riddle.likes ? "Unlike" : "Like"}
+          >
+            <ThumbsUp size={12} className={likeCount > riddle.likes ? "fill-blue-500 text-blue-500" : ""} /> 
+            {likeCount}
+          </button>
           <button 
             onClick={toggleBookmark}
             className="hover:text-yellow-500 transition-colors"
+            aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
           >
             <Bookmark size={16} className={isBookmarked ? "fill-yellow-500 text-yellow-500" : ""} />
           </button>
@@ -168,7 +229,10 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
 };
 
 // Progress component for impossible riddles
-const ImpossibleProgress = () => {
+const ImpossibleProgress = ({ solvedCount, totalCount }: { solvedCount: number, totalCount: number }) => {
+  // Calculate progress percentage
+  const progressPercentage = (solvedCount / totalCount) * 100;
+  
   return (
     <div className="mb-8 p-4 bg-purple-50 border border-purple-200 rounded-md">
       <h3 className="font-semibold mb-2 flex items-center gap-2">
@@ -177,10 +241,13 @@ const ImpossibleProgress = () => {
       </h3>
       <div className="flex justify-between items-center">
         <div className="text-sm">
-          <p>Solved: <span className="font-medium">0/{impossibleRiddles.length}</span></p>
+          <p>Solved: <span className="font-medium">{solvedCount}/{totalCount}</span></p>
         </div>
         <div className="w-64 bg-gray-200 rounded-full h-2.5">
-          <div className="bg-purple-600 h-2.5 rounded-full w-0"></div>
+          <div 
+            className="bg-purple-600 h-2.5 rounded-full" 
+            style={{ width: `${progressPercentage}%` }}
+          ></div>
         </div>
       </div>
       <p className="text-xs text-gray-500 mt-2">
@@ -193,6 +260,57 @@ const ImpossibleProgress = () => {
 // Main impossible riddles page component
 export default function ImpossibleRiddlesPage() {
   const [bookmarkedRiddles, setBookmarkedRiddles] = useState<string[]>([]);
+  const [likedRiddles, setLikedRiddles] = useState<Record<string, number>>({});
+  const [solvedRiddles, setSolvedRiddles] = useState<string[]>([]);
+  
+  // Load saved state from localStorage on component mount
+  useEffect(() => {
+    const loadSavedState = () => {
+      try {
+        const savedBookmarks = localStorage.getItem('bookmarkedRiddles');
+        const savedLikes = localStorage.getItem('likedRiddles');
+        const savedSolved = localStorage.getItem('solvedRiddles');
+        
+        if (savedBookmarks) {
+          setBookmarkedRiddles(JSON.parse(savedBookmarks));
+        }
+        
+        if (savedLikes) {
+          setLikedRiddles(JSON.parse(savedLikes));
+        } else {
+          // Initialize with default values
+          const initialLikes = impossibleRiddles.reduce((acc, riddle) => {
+            acc[riddle.id] = riddle.likes;
+            return acc;
+          }, {} as Record<string, number>);
+          setLikedRiddles(initialLikes);
+        }
+        
+        if (savedSolved) {
+          setSolvedRiddles(JSON.parse(savedSolved));
+        }
+      } catch (error) {
+        console.error('Error loading saved state:', error);
+      }
+    };
+
+    loadSavedState();
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('bookmarkedRiddles', JSON.stringify(bookmarkedRiddles));
+  }, [bookmarkedRiddles]);
+
+  useEffect(() => {
+    if (Object.keys(likedRiddles).length > 0) {
+      localStorage.setItem('likedRiddles', JSON.stringify(likedRiddles));
+    }
+  }, [likedRiddles]);
+  
+  useEffect(() => {
+    localStorage.setItem('solvedRiddles', JSON.stringify(solvedRiddles));
+  }, [solvedRiddles]);
   
   const handleBookmark = (id: string) => {
     setBookmarkedRiddles(prev => 
@@ -200,11 +318,36 @@ export default function ImpossibleRiddlesPage() {
         ? prev.filter(item => item !== id) 
         : [...prev, id]
     );
-    // In a real app, you'd save this to localStorage or user account
+  };
+
+  const handleLike = (id: string) => {
+    setLikedRiddles(prev => {
+      const defaultLikes = impossibleRiddles.find(r => r.id === id)?.likes || 0;
+      const currentLikes = prev[id] || defaultLikes;
+      
+      // If current likes are higher than original, reset to original, otherwise increment
+      const newLikes = currentLikes > defaultLikes ? defaultLikes : currentLikes + 1;
+      
+      return {
+        ...prev,
+        [id]: newLikes
+      };
+    });
+  };
+
+  const handleSolve = (id: string) => {
+    if (!solvedRiddles.includes(id)) {
+      setSolvedRiddles(prev => [...prev, id]);
+    }
+  };
+
+  const getLikeCount = (id: string) => {
+    const defaultLikes = impossibleRiddles.find(r => r.id === id)?.likes || 0;
+    return likedRiddles[id] !== undefined ? likedRiddles[id] : defaultLikes;
   };
 
   return (
-    <div className="container mx-auto  py-8">
+    <div className="container mx-auto py-8">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <Brain size={24} className="text-purple-600" />
@@ -215,14 +358,22 @@ export default function ImpossibleRiddlesPage() {
         </p>
       </div>
       
-      <ImpossibleProgress />
+      <ImpossibleProgress 
+        solvedCount={solvedRiddles.length} 
+        totalCount={impossibleRiddles.length} 
+      />
       
       <div className="space-y-6">
         {impossibleRiddles.map(riddle => (
           <RiddleCard 
             key={riddle.id} 
             riddle={riddle} 
-            onBookmark={handleBookmark} 
+            onBookmark={handleBookmark}
+            isBookmarked={bookmarkedRiddles.includes(riddle.id)}
+            onLike={handleLike}
+            likeCount={getLikeCount(riddle.id)}
+            onSolve={handleSolve}
+            isSolved={solvedRiddles.includes(riddle.id)}
           />
         ))}
       </div>

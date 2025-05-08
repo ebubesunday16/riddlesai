@@ -8,11 +8,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { impossibleRiddles, trendingRiddles, type TrendingRiddleType } from '@/data/ImpossibleRiddle';
 import ChallengeMode from './ChallengeMode';
+import { toast } from 'sonner';
 
-
-// Sample data - in production, this would come from your database
-
-
+// DifficultyBadge component
 const DifficultyBadge = ({ difficulty }: { difficulty: TrendingRiddleType['difficulty'] }) => {
   const colors = {
     easy: "bg-green-100 text-green-800 border-green-200",
@@ -36,13 +34,39 @@ const DifficultyBadge = ({ difficulty }: { difficulty: TrendingRiddleType['diffi
 };
 
 // RiddleCard component
-const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBookmark?: (id: string) => void }) => {
+const RiddleCard = ({ 
+  riddle, 
+  onBookmark, 
+  isBookmarked, 
+  onLike,
+  likeCount 
+}: { 
+  riddle: TrendingRiddleType, 
+  onBookmark: (id: string) => void,
+  isBookmarked: boolean,
+  onLike: (id: string) => void,
+  likeCount: number
+}) => {
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const toggleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    if (onBookmark) onBookmark(riddle.id);
+    onBookmark(riddle.id);
+    toast(isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks', {
+      description: isBookmarked ? 
+        `"${riddle.question.substring(0, 30)}..." removed from your bookmarks` : 
+        `"${riddle.question.substring(0, 30)}..." added to your bookmarks`,
+      icon: isBookmarked ? '🔖' : '📌',
+      position: 'bottom-right',
+    });
+  };
+
+  const handleLike = () => {
+    onLike(riddle.id);
+    toast('Thanks for your feedback!', {
+      description: `You ${likeCount > riddle.likes ? 'liked' : 'unliked'} this riddle`,
+      icon: likeCount > riddle.likes ? '👍' : '👎',
+      position: 'bottom-right',
+    });
   };
 
   return (
@@ -57,12 +81,17 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <ThumbsUp size={12} /> {riddle.likes}
-          </span>
+          <button 
+            onClick={handleLike}
+            className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+          >
+            <ThumbsUp size={12} className={likeCount > riddle.likes ? "fill-blue-500 text-blue-500" : ""} /> 
+            {likeCount}
+          </button>
           <button 
             onClick={toggleBookmark}
             className="hover:text-yellow-500 transition-colors"
+            aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
           >
             <Bookmark size={16} className={isBookmarked ? "fill-yellow-500 text-yellow-500" : ""} />
           </button>
@@ -82,7 +111,7 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
         </Button>
         
         <Link 
-          href={`/riddles/${slugify(riddle.category)}`}
+          href={`/riddles${slugify(riddle.category)}`}
           className="text-xs text-gray-600 hover:underline"
         >
           {riddle.category}
@@ -98,20 +127,80 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
   );
 };
 
-
-
 // Main component
 const EngagementFeatures = ({ currentCategory }: { currentCategory?: string }) => {
+  // State for bookmarked riddles and liked riddles
   const [bookmarkedRiddles, setBookmarkedRiddles] = useState<string[]>([]);
-  
+  const [likedRiddles, setLikedRiddles] = useState<Record<string, number>>({});
+
+  // Load saved state from localStorage on component mount
+  useEffect(() => {
+    const loadSavedState = () => {
+      try {
+        const savedBookmarks = localStorage.getItem('bookmarkedRiddles');
+        const savedLikes = localStorage.getItem('likedRiddles');
+        
+        if (savedBookmarks) {
+          setBookmarkedRiddles(JSON.parse(savedBookmarks));
+        }
+        
+        if (savedLikes) {
+          setLikedRiddles(JSON.parse(savedLikes));
+        } else {
+          // Initialize with default values
+          const initialLikes = [...trendingRiddles, ...impossibleRiddles].reduce((acc, riddle) => {
+            acc[riddle.id] = riddle.likes;
+            return acc;
+          }, {} as Record<string, number>);
+          setLikedRiddles(initialLikes);
+        }
+      } catch (error) {
+        console.error('Error loading saved state:', error);
+      }
+    };
+
+    loadSavedState();
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (bookmarkedRiddles.length > 0) {
+      localStorage.setItem('bookmarkedRiddles', JSON.stringify(bookmarkedRiddles));
+    }
+  }, [bookmarkedRiddles]);
+
+  useEffect(() => {
+    if (Object.keys(likedRiddles).length > 0) {
+      localStorage.setItem('likedRiddles', JSON.stringify(likedRiddles));
+    }
+  }, [likedRiddles]);
+
   const handleBookmark = (id: string) => {
     setBookmarkedRiddles(prev => 
       prev.includes(id) 
         ? prev.filter(item => item !== id) 
         : [...prev, id]
     );
-    
-    // In a real app, you'd save this to localStorage or user account
+  };
+
+  const handleLike = (id: string) => {
+    setLikedRiddles(prev => {
+      const defaultLikes = [...trendingRiddles, ...impossibleRiddles].find(r => r.id === id)?.likes || 0;
+      const currentLikes = prev[id] || defaultLikes;
+      
+      // If current likes are higher than original, reset to original, otherwise increment
+      const newLikes = currentLikes > defaultLikes ? defaultLikes : currentLikes + 1;
+      
+      return {
+        ...prev,
+        [id]: newLikes
+      };
+    });
+  };
+
+  const getLikeCount = (id: string) => {
+    const defaultLikes = [...trendingRiddles, ...impossibleRiddles].find(r => r.id === id)?.likes || 0;
+    return likedRiddles[id] !== undefined ? likedRiddles[id] : defaultLikes;
   };
   
   return (
@@ -130,13 +219,16 @@ const EngagementFeatures = ({ currentCategory }: { currentCategory?: string }) =
           
           <TabsContent value="popular" className="space-y-3">
             {trendingRiddles
-              .sort((a, b) => b.likes - a.likes)
+              .sort((a, b) => (getLikeCount(b.id) - getLikeCount(a.id)))
               .slice(0, 3)
               .map(riddle => (
                 <RiddleCard 
                   key={riddle.id} 
-                  riddle={riddle} 
-                  onBookmark={handleBookmark} 
+                  riddle={riddle}
+                  onBookmark={handleBookmark}
+                  isBookmarked={bookmarkedRiddles.includes(riddle.id)}
+                  onLike={handleLike}
+                  likeCount={getLikeCount(riddle.id)}
                 />
               ))
             }
@@ -150,8 +242,11 @@ const EngagementFeatures = ({ currentCategory }: { currentCategory?: string }) =
               .map(riddle => (
                 <RiddleCard 
                   key={riddle.id} 
-                  riddle={riddle} 
-                  onBookmark={handleBookmark} 
+                  riddle={riddle}
+                  onBookmark={handleBookmark}
+                  isBookmarked={bookmarkedRiddles.includes(riddle.id)}
+                  onLike={handleLike}
+                  likeCount={getLikeCount(riddle.id)}
                 />
               ))
             }
@@ -164,12 +259,10 @@ const EngagementFeatures = ({ currentCategory }: { currentCategory?: string }) =
             variant="outline"
             className="text-xs border-black hover:bg-[#FFC107] hover:text-black"
           >
-            <Link href="riddles/trending">VIEW ALL TRENDING RIDDLES</Link>
+            <Link href="/riddles/trending">VIEW ALL TRENDING RIDDLES</Link>
           </Button>
         </div>
       </div>
-      
-     
       
       <div className="bg-white p-4 rounded-[4px] border-2 border-black shadow-[2px_2px_0_0_#163300]">
         <div className="flex items-center gap-2 mb-4">
@@ -183,8 +276,11 @@ const EngagementFeatures = ({ currentCategory }: { currentCategory?: string }) =
           {impossibleRiddles.slice(0, 2).map(riddle => (
             <RiddleCard 
               key={riddle.id} 
-              riddle={riddle} 
-              onBookmark={handleBookmark} 
+              riddle={riddle}
+              onBookmark={handleBookmark}
+              isBookmarked={bookmarkedRiddles.includes(riddle.id)}
+              onLike={handleLike}
+              likeCount={getLikeCount(riddle.id)}
             />
           ))}
         </div>
@@ -195,7 +291,7 @@ const EngagementFeatures = ({ currentCategory }: { currentCategory?: string }) =
             variant="outline"
             className="text-xs border-black hover:bg-[#FFC107] hover:text-black"
           >
-            <Link href="riddles/impossible">VIEW ALL IMPOSSIBLE RIDDLES</Link>
+            <Link href="/riddles/impossible">VIEW ALL IMPOSSIBLE RIDDLES</Link>
           </Button>
         </div>
       </div>

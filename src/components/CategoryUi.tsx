@@ -11,7 +11,7 @@ const CategoryUI = ({currentCategory, className}: {currentCategory?: string, cla
           {filteredArray.map((category) => (
             <Link
               key={category}
-              href={`/${slugify(category)}`}
+              href={`/riddles/${slugify(category)}`}
               className={`px-3 py-1 rounded-full text-xs
                 ${slugify(category) === currentCategory
                   ? 'bg-blue-500 text-white'

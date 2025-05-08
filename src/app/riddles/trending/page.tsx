@@ -5,8 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { slugify } from '@/utils/func';
 import { Bookmark, Brain, FireExtinguisher, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { trendingRiddles, type TrendingRiddleType } from '@/data/ImpossibleRiddle';
+import { toast } from 'sonner';
 
 // DifficultyBadge component (reused from EngagementFeatures)
 const DifficultyBadge = ({ difficulty }: { difficulty: TrendingRiddleType['difficulty'] }) => {
@@ -31,14 +32,40 @@ const DifficultyBadge = ({ difficulty }: { difficulty: TrendingRiddleType['diffi
   );
 };
 
-// RiddleCard component (reused and extended from EngagementFeatures)
-const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBookmark?: (id: string) => void }) => {
+// RiddleCard component (enhanced with real likes and bookmarks)
+const RiddleCard = ({ 
+  riddle, 
+  onBookmark, 
+  isBookmarked,
+  onLike,
+  likeCount
+}: { 
+  riddle: TrendingRiddleType, 
+  onBookmark: (id: string) => void,
+  isBookmarked: boolean,
+  onLike: (id: string) => void,
+  likeCount: number
+}) => {
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const toggleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    if (onBookmark) onBookmark(riddle.id);
+    onBookmark(riddle.id);
+    toast(isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks', {
+      description: isBookmarked ? 
+        `"${riddle.question.substring(0, 30)}..." removed from your bookmarks` : 
+        `"${riddle.question.substring(0, 30)}..." added to your bookmarks`,
+      icon: isBookmarked ? '🔖' : '📌',
+      position: 'bottom-right',
+    });
+  };
+
+  const handleLike = () => {
+    onLike(riddle.id);
+    toast('Thanks for your feedback!', {
+      description: `You ${likeCount > riddle.likes ? 'liked' : 'unliked'} this riddle`,
+      icon: likeCount > riddle.likes ? '👍' : '👎',
+      position: 'bottom-right',
+    });
   };
 
   return (
@@ -53,12 +80,18 @@ const RiddleCard = ({ riddle, onBookmark }: { riddle: TrendingRiddleType, onBook
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <ThumbsUp size={12} /> {riddle.likes}
-          </span>
+          <button 
+            onClick={handleLike}
+            className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+            aria-label={likeCount > riddle.likes ? "Unlike" : "Like"}
+          >
+            <ThumbsUp size={12} className={likeCount > riddle.likes ? "fill-blue-500 text-blue-500" : ""} /> 
+            {likeCount}
+          </button>
           <button 
             onClick={toggleBookmark}
             className="hover:text-yellow-500 transition-colors"
+            aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
           >
             <Bookmark size={16} className={isBookmarked ? "fill-yellow-500 text-yellow-500" : ""} />
           </button>
@@ -126,6 +159,47 @@ export default function TrendingRiddlesPage() {
   const [activeTab, setActiveTab] = useState("popular");
   const [activeFilter, setActiveFilter] = useState("all");
   const [bookmarkedRiddles, setBookmarkedRiddles] = useState<string[]>([]);
+  const [likedRiddles, setLikedRiddles] = useState<Record<string, number>>({});
+
+  // Load saved state from localStorage on component mount
+  useEffect(() => {
+    const loadSavedState = () => {
+      try {
+        const savedBookmarks = localStorage.getItem('bookmarkedRiddles');
+        const savedLikes = localStorage.getItem('likedRiddles');
+        
+        if (savedBookmarks) {
+          setBookmarkedRiddles(JSON.parse(savedBookmarks));
+        }
+        
+        if (savedLikes) {
+          setLikedRiddles(JSON.parse(savedLikes));
+        } else {
+          // Initialize with default values
+          const initialLikes = trendingRiddles.reduce((acc, riddle) => {
+            acc[riddle.id] = riddle.likes;
+            return acc;
+          }, {} as Record<string, number>);
+          setLikedRiddles(initialLikes);
+        }
+      } catch (error) {
+        console.error('Error loading saved state:', error);
+      }
+    };
+
+    loadSavedState();
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('bookmarkedRiddles', JSON.stringify(bookmarkedRiddles));
+  }, [bookmarkedRiddles]);
+
+  useEffect(() => {
+    if (Object.keys(likedRiddles).length > 0) {
+      localStorage.setItem('likedRiddles', JSON.stringify(likedRiddles));
+    }
+  }, [likedRiddles]);
   
   const handleBookmark = (id: string) => {
     setBookmarkedRiddles(prev => 
@@ -133,14 +207,33 @@ export default function TrendingRiddlesPage() {
         ? prev.filter(item => item !== id) 
         : [...prev, id]
     );
-    // In a real app, you'd save this to localStorage or user account
+  };
+
+  const handleLike = (id: string) => {
+    setLikedRiddles(prev => {
+      const defaultLikes = trendingRiddles.find(r => r.id === id)?.likes || 0;
+      const currentLikes = prev[id] || defaultLikes;
+      
+      // If current likes are higher than original, reset to original, otherwise increment
+      const newLikes = currentLikes > defaultLikes ? defaultLikes : currentLikes + 1;
+      
+      return {
+        ...prev,
+        [id]: newLikes
+      };
+    });
+  };
+
+  const getLikeCount = (id: string) => {
+    const defaultLikes = trendingRiddles.find(r => r.id === id)?.likes || 0;
+    return likedRiddles[id] !== undefined ? likedRiddles[id] : defaultLikes;
   };
   
   // Filter and sort riddles based on active tab and filter
   const filteredRiddles = trendingRiddles
     .filter(riddle => activeFilter === "all" || riddle.difficulty === activeFilter)
     .sort((a, b) => {
-      if (activeTab === "popular") return b.likes - a.likes;
+      if (activeTab === "popular") return getLikeCount(b.id) - getLikeCount(a.id);
       if (activeTab === "newest") return riddle.isNew ? -1 : 1;
       return 0;
     });
@@ -172,7 +265,10 @@ export default function TrendingRiddlesPage() {
             <RiddleCard 
               key={riddle.id} 
               riddle={riddle} 
-              onBookmark={handleBookmark} 
+              onBookmark={handleBookmark}
+              isBookmarked={bookmarkedRiddles.includes(riddle.id)}
+              onLike={handleLike}
+              likeCount={getLikeCount(riddle.id)}
             />
           ))}
         </div>
