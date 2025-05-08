@@ -62,8 +62,8 @@ const RiddleCard = ({
   const handleLike = () => {
     onLike(riddle.id);
     toast('Thanks for your feedback!', {
-      description: `You ${likeCount > riddle.likes ? 'liked' : 'unliked'} this riddle`,
-      icon: likeCount > riddle.likes ? '👍' : '👎',
+      description: `You ${likeCount > riddle.likes ? 'unliked' : 'liked'} this riddle`,
+      icon: likeCount > riddle.likes ? '👎' : '👍',
       position: 'bottom-right',
     });
   };
