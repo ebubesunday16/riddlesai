@@ -63,8 +63,8 @@ const RiddleCard = ({
   const handleLike = () => {
     onLike(riddle.id);
     toast('Thanks for your feedback!', {
-      description: `You ${likeCount > riddle.likes ? 'liked' : 'unliked'} this riddle`,
-      icon: likeCount > riddle.likes ? '👍' : '👎',
+      description: `You ${likeCount > riddle.likes ? 'unliked' : 'liked'} this riddle`,
+      icon: likeCount > riddle.likes ? '👎' : '👍',
       position: 'bottom-right',
     });
   };
@@ -235,7 +235,7 @@ const EngagementFeatures = ({ currentCategory }: { currentCategory?: string }) =
           </TabsContent>
           
           <TabsContent value="newest" className="space-y-3">
-            {trendingRiddles
+            {impossibleRiddles
               .filter(riddle => riddle.isNew)
               .concat(trendingRiddles.filter(riddle => !riddle.isNew))
               .slice(0, 3)
